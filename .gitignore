@@ -8,3 +8,6 @@ products.db
 
 .env
 .DS_Store
+
+similarity_graph.png
+catalog_similarity_graph.png

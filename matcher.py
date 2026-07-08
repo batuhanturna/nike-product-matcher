@@ -6,13 +6,17 @@ from database import get_all_products
 
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
+# Minimum similarity threshold.
+# 0.70 means 70%.
+MIN_SIMILARITY_SCORE = 0.70
+
 
 class ProductMatcher:
     def __init__(self):
         print("Loading model...")
         self.model = SentenceTransformer(MODEL_NAME)
 
-    def find_similar_products(self, query_text, top_k=5, exclude_url=None):
+    def find_similar_products(self, query_text, top_k=5, exclude_url=None, min_score=MIN_SIMILARITY_SCORE):
         products = get_all_products()
 
         if not products:
@@ -40,6 +44,10 @@ class ProductMatcher:
 
             score = util.cos_sim(query_embedding, product_embedding)[0][0].item()
 
+            # Only keep products with similarity score >= 70%
+            if score < min_score:
+                continue
+
             results.append({
                 "id": product["id"],
                 "name": product["name"],
@@ -49,4 +57,6 @@ class ProductMatcher:
                 "score": score
             })
 
-        return sorted(results, key=lambda item: item["score"], reverse=True)[:top_k]
+        results = sorted(results, key=lambda item: item["score"], reverse=True)
+
+        return results[:top_k]
