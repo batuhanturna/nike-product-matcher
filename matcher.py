@@ -54,6 +54,7 @@ class ProductMatcher:
                 "description": product["description"],
                 "category": product["category"],
                 "url": product["url"],
+                "image_url": product.get("image_url"),
                 "score": score
             })
 

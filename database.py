@@ -19,31 +19,46 @@ def create_table():
         name TEXT NOT NULL,
         description TEXT NOT NULL,
         category TEXT,
-        url TEXT,
+        url TEXT UNIQUE,
         embedding TEXT
     )
     """)
+
+    cursor.execute("PRAGMA table_info(products)")
+    columns = [column[1] for column in cursor.fetchall()]
+
+    if "image_url" not in columns:
+        cursor.execute("ALTER TABLE products ADD COLUMN image_url TEXT")
 
     conn.commit()
     conn.close()
 
 
-def add_product(name, description, category=None, url=None, embedding=None):
+def add_product(name, description, category=None, url=None, embedding=None, image_url=None):
     conn = get_connection()
     cursor = conn.cursor()
 
     embedding_json = json.dumps(embedding) if embedding is not None else None
 
     cursor.execute("""
-    INSERT INTO products (name, description, category, url, embedding)
-    VALUES (?, ?, ?, ?, ?)
-    """, (name, description, category, url, embedding_json))
+    INSERT OR IGNORE INTO products
+    (name, description, category, url, embedding, image_url)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (name, description, category, url, embedding_json, image_url))
 
     conn.commit()
     conn.close()
 
 
-def update_product(product_id, name=None, description=None, category=None, url=None, embedding=None):
+def update_product(
+    product_id,
+    name=None,
+    description=None,
+    category=None,
+    url=None,
+    embedding=None,
+    image_url=None
+):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -70,6 +85,10 @@ def update_product(product_id, name=None, description=None, category=None, url=N
         fields.append("embedding = ?")
         values.append(json.dumps(embedding))
 
+    if image_url is not None:
+        fields.append("image_url = ?")
+        values.append(image_url)
+
     if not fields:
         conn.close()
         return
@@ -88,7 +107,7 @@ def get_all_products():
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT id, name, description, category, url, embedding
+    SELECT id, name, description, category, url, embedding, image_url
     FROM products
     """)
 
@@ -98,7 +117,7 @@ def get_all_products():
     products = []
 
     for row in rows:
-        product_id, name, description, category, url, embedding_json = row
+        product_id, name, description, category, url, embedding_json, image_url = row
 
         embedding = json.loads(embedding_json) if embedding_json else None
 
@@ -108,7 +127,8 @@ def get_all_products():
             "description": description,
             "category": category,
             "url": url,
-            "embedding": embedding
+            "embedding": embedding,
+            "image_url": image_url
         })
 
     return products

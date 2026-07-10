@@ -10,6 +10,21 @@ NOISY_PATTERNS = [
     r"\bProduct Details\b",
     r"\bBenefits\b",
     r"\bSize\s+\d+(\.\d+)?\b",
+    r"\bSize:\s*[A-Za-z0-9\.]+",
+    r"\bSize\s+[A-Za-z0-9\.]+",
+    r"\bSizes?:\s*[A-Za-z0-9, /\-]+",
+    r"\bXS\b",
+    r"\bS\b",
+    r"\bM\b",
+    r"\bL\b",
+    r"\bXL\b",
+    r"\bXXL\b",
+    r"\bXXXL\b",
+    r"\bMen's US\s*\d+(\.\d+)?\b",
+    r"\bWomen's US\s*\d+(\.\d+)?\b",
+    r"\bUS\s*\d+(\.\d+)?\b",
+    r"\bEU\s*\d+(\.\d+)?\b",
+    r"\bUK\s*\d+(\.\d+)?\b",
 ]
 
 
@@ -20,6 +35,10 @@ LOW_VALUE_LINES = [
     "personal protective equipment",
     "imported",
     "reflective details",
+    "size:",
+    "sizes:",
+    "men's us",
+    "women's us",
 ]
 
 
@@ -97,6 +116,19 @@ def extract_color_text(description):
                 colors.append(color)
 
     return " | ".join(colors)
+
+def clean_name_for_matching(name):
+    if not name:
+        return ""
+
+    cleaned = name
+
+    cleaned = re.sub(r"\s+-\s+Size\s+[A-Za-z0-9\.]+", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bSize\s+[A-Za-z0-9\.]+\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bXS\b|\bS\b|\bM\b|\bL\b|\bXL\b|\bXXL\b|\bXXXL\b", " ", cleaned, flags=re.IGNORECASE)
+
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
 
 
 def remove_noisy_patterns(text):
@@ -243,6 +275,7 @@ def build_matching_text(name=None, category=None, description=None):
 
     clean_description = clean_description_for_matching(description)
     color_text = extract_color_text(description)
+    clean_name = clean_name_for_matching(name)
 
     parts = []
 
@@ -255,6 +288,10 @@ def build_matching_text(name=None, category=None, description=None):
 
     if clean_description:
         parts.append(f"Important product features: {clean_description}")
+
+    if clean_name:
+        parts.append(f"Product name: {clean_name}")
+        parts.append(f"Product identity: {clean_name}")
 
     if color_text:
         # Color is useful, but not repeated too much.

@@ -1,40 +1,43 @@
-from scraper import scrape_product_description_with_source
+from scraper import scrape_product_info
 
 
 def main():
-    print("Nike Product Description Debug Tool")
-    print("Type 'q' to exit.")
-
     while True:
-        print("\n" + "=" * 80)
-        url = input("Enter product URL: ").strip()
+        url = input("Enter product URL or q to quit: ").strip()
 
-        if url.lower() == "q":
-            print("Program closed.")
+        if url.lower() in ["q", "quit", "exit"]:
+            print("Exiting...")
             break
 
-        if not url.startswith("http"):
-            print("Please enter a valid URL.")
+        if not url:
+            print("Please enter a product URL or q to quit.")
             continue
 
         try:
-            result = scrape_product_description_with_source(url)
+            product_info = scrape_product_info(url)
 
             print("\nProduct name:")
-            print(result.get("name"))
+            print(product_info.get("name"))
 
             print("\nSource:")
-            print(result["source"])
+            print(product_info.get("description_source"))
+
+            print("\nImage URL:")
+            print(product_info.get("image_url"))
 
             print("\nExtracted description:")
             print("-" * 80)
-            print(result["description"])
+            print(product_info.get("description"))
             print("-" * 80)
-            print(f"Character count: {len(result['description'])}")
+
+            description = product_info.get("description") or ""
+            print(f"Character count: {len(description)}")
 
         except Exception as error:
-            print("Could not scrape product description.")
+            print("\nCould not scrape product description.")
             print(f"Error: {error}")
+
+        print("\n" + "=" * 80)
 
 
 if __name__ == "__main__":

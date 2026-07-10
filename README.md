@@ -120,3 +120,66 @@ The system uses:
 
 ```text
 sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+
+## Latest Update: Web Interface and Admin Panel
+
+The project was upgraded from a terminal-based prototype into a more user-friendly web demo using Streamlit.
+
+### New Features
+
+- Added a professional Streamlit web interface.
+  - Users can search similar Nike products directly from the browser.
+  - Product results are displayed as visual product cards.
+  - Product images, categories, similarity scores and product links are shown together.
+
+- Added product image support.
+  - The Nike scraper now extracts product image URLs from product pages.
+  - The image URL is stored in the local SQLite database.
+  - Product images are displayed in the catalog, similarity results and graph nodes.
+
+- Added interactive similarity search.
+  - Users can enter a Nike product URL.
+  - The system scrapes the product data.
+  - A semantic embedding is created for the query product.
+  - Similar products are listed with similarity scores and images.
+
+- Added graph JSON export.
+  - Product similarity graphs can now be exported as structured JSON.
+  - The JSON contains nodes, edges, product labels, categories, URLs, image URLs and similarity scores.
+  - This makes the graph data reusable for frontend visualizations.
+
+- Added interactive graph visualization.
+  - Graphs are displayed inside the web interface using PyVis.
+  - Product images can be shown as graph nodes.
+  - Users can inspect product relationships visually.
+
+- Added an Admin Panel.
+  - Category reports can be viewed from the browser.
+  - Multiple products can be added by pasting Nike product URLs.
+  - Products can be deleted individually.
+  - Categories can be deleted with exact category matching.
+  - Database backups can be created from the interface.
+  - Embeddings can be rebuilt locally without scraping Nike again.
+
+### Admin Panel Features
+
+The Admin Panel includes:
+
+- Category Report
+- Bulk Add URLs
+- Delete Selected Products
+- Delete Exact Category
+- Create Database Backup
+- Rebuild Local Embeddings
+
+This makes the project easier to manage without using separate terminal scripts for every operation.
+
+### Product Image Extraction
+
+The scraper now extracts images mainly from:
+
+```text
+og:image
+twitter:image
+JSON-LD Product image
+static.nike.com image links

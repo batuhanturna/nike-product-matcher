@@ -438,6 +438,7 @@ def parse_product_info(html, url):
     json_ld_products = parse_json_ld_products(soup)
 
     name = extract_product_name(soup, json_ld_products)
+    image_url = extract_product_image(soup, json_ld_products, html)
 
     description = extract_from_view_product_details(soup)
     source = "HTML element: [data-testid='view-product-details']"
@@ -472,6 +473,7 @@ def parse_product_info(html, url):
         "name": name,
         "description": description,
         "description_source": source,
+        "image_url": image_url,
         "url": url
     }
 
@@ -553,6 +555,89 @@ def scrape_product_info(url, use_playwright_fallback=True):
         raise request_error
 
     raise Exception("Product info could not be scraped.")
+
+def extract_product_image(soup, json_ld_products, html=None):
+    """
+    Extracts Nike product image URL.
+
+    Priority:
+    1. JSON-LD Product image
+    2. og:image
+    3. twitter:image
+    4. static.nike.com links from HTML
+    """
+
+    for product in json_ld_products:
+        image = product.get("image")
+
+        if isinstance(image, str) and image.startswith("http"):
+            return image
+
+        if isinstance(image, list) and len(image) > 0:
+            first_image = image[0]
+
+            if isinstance(first_image, str) and first_image.startswith("http"):
+                return first_image
+
+            if isinstance(first_image, dict) and first_image.get("url"):
+                return first_image.get("url")
+
+        if isinstance(image, dict) and image.get("url"):
+            return image.get("url")
+
+    meta_selectors = [
+        {"property": "og:image"},
+        {"property": "og:image:secure_url"},
+        {"name": "twitter:image"},
+    ]
+
+    for attrs in meta_selectors:
+        tag = soup.find("meta", attrs=attrs)
+
+        if tag and tag.get("content"):
+            return tag.get("content")
+
+    image_selectors = [
+        "[class*='product-imagery'] img",
+        "[data-testid='mobile-image-carousel-list'] img",
+        "[data-testid*='image-carousel'] img",
+        "picture img",
+        "img[src*='static.nike.com']",
+    ]
+
+    for selector in image_selectors:
+        image_tag = soup.select_one(selector)
+
+        if not image_tag:
+            continue
+
+        if image_tag.get("src"):
+            return image_tag.get("src")
+
+        if image_tag.get("srcset"):
+            return image_tag.get("srcset").split(",")[0].strip().split(" ")[0]
+
+    if html:
+        matches = re.findall(r"https://static\.nike\.com[^\"'\s)]+", html)
+
+        cleaned_matches = []
+
+        for match in matches:
+            match = match.replace("\\u002F", "/")
+            match = match.replace("\\/", "/")
+
+            if match not in cleaned_matches:
+                cleaned_matches.append(match)
+
+        for match in cleaned_matches:
+            if "/a/images/" in match:
+                return match
+
+        if cleaned_matches:
+            return cleaned_matches[0]
+
+    return None
+
 
 
 def scrape_product_description(url):

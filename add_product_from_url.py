@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 
-from database import create_table, add_product
+from database import create_table, add_product, product_exists
 from matching_text import build_matching_text
 from scraper import scrape_product_info
 
@@ -9,59 +9,60 @@ MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 def main():
-    print("Add product from URL")
-    print("Type 'q' to exit.")
-
     create_table()
 
     print("Loading model...")
     model = SentenceTransformer(MODEL_NAME)
 
     while True:
-        print("\n" + "=" * 60)
+        url = input("\nEnter Nike product URL or q to quit: ").strip()
 
-        url = input("Enter product URL: ").strip()
-
-        if url.lower() == "q":
-            print("Program closed.")
+        if url.lower() in ["q", "quit", "exit"]:
+            print("Exiting...")
             break
 
-        if not url.startswith("http"):
-            print("Please enter a valid URL.")
+        if not url:
+            print("Please enter a product URL.")
             continue
 
-        category = input("Enter category, for example Shoes, T-Shirt, Hoodie: ").strip()
+        if product_exists(url):
+            print("This product already exists in the database.")
+            continue
+
+        category = input("Enter category, for example Shoes > Running: ").strip()
 
         try:
-            print("\nScraping product info...")
+            print("\nScraping product...")
             info = scrape_product_info(url)
 
-            name = info["name"] or input("Could not detect name. Enter product name: ").strip()
-            description = info["description"]
+            print("\nProduct name:")
+            print(info.get("name"))
 
-            print("\nExtracted info:")
-            print(f"Name: {name}")
-            print(f"Description source: {info['description_source']}")
-            print(f"Description: {description}")
+            print("\nImage URL:")
+            print(info.get("image_url"))
+
+            print("\nDescription source:")
+            print(info.get("description_source"))
 
             matching_text = build_matching_text(
-                name=name,
+                name=info.get("name"),
                 category=category,
-                description=description
+                description=info.get("description")
             )
 
-            print("\nCreating embedding from name + category + description...")
+            print("\nCreating embedding...")
             embedding = model.encode(matching_text).tolist()
 
             add_product(
-                name=name,
-                description=description,
+                name=info.get("name"),
+                description=info.get("description"),
                 category=category,
                 url=url,
-                embedding=embedding
+                embedding=embedding,
+                image_url=info.get("image_url")
             )
 
-            print(f"\nProduct added to database: {name}")
+            print("\nProduct added successfully.")
 
         except Exception as error:
             print("\nCould not add product.")

@@ -11,3 +11,16 @@ products.db
 
 similarity_graph.png
 catalog_similarity_graph.png
+
+# Streamlit / app outputs
+.streamlit/secrets.toml
+
+# Database backups
+backups/
+products_backup_*.db
+
+# Graph / export outputs
+product_similarity_graph.json
+latest_product_similarity_graph.json
+catalog_similarity_graph.json
+similar_products.json
